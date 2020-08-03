@@ -1,0 +1,184 @@
+Description: |
+    Kirsten Cassidy - Udacity Capstone Project 
+
+Parameters:
+
+    EnvironmentName:
+        Description: Env Name serving as prefix to access output variables
+        Type: String
+
+Resources: 
+    LBSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupName: LB Security Group
+            GroupDescription: Load Balancer Security Group Project 2
+            SecurityGroupIngress: 
+                - CidrIp: 0.0.0.0/0
+                  FromPort: 80
+                  ToPort: 80
+                  IpProtocol: tcp
+            SecurityGroupEgress: 
+                - CidrIp: 0.0.0.0/0
+                  FromPort: 80
+                  ToPort: 80
+                  IpProtocol: tcp
+                - CidrIp: 0.0.0.0/0
+                  FromPort: 8080
+                  ToPort: 8080
+                  IpProtocol: tcp
+                - IpProtocol: tcp
+                  FromPort: 8080
+                  ToPort: 8080
+                  CidrIpv6: ::/0
+                  
+            VpcId:
+                Fn::ImportValue:
+                  !Sub ${EnvironmentName}-VPCID
+
+    WebServerSecGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupName: WebServer Security Group 
+            GroupDescription: Allow http from local VPC
+            VpcId: 
+                Fn::ImportValue:
+                  !Sub ${EnvironmentName}-VPCID
+            SecurityGroupIngress: 
+                - CidrIp: 0.0.0.0/0
+                  FromPort: 80
+                  ToPort: 80
+                  IpProtocol: tcp
+                - CidrIp: 0.0.0.0/0
+                  FromPort: 22
+                  ToPort: 22
+                  IpProtocol: tcp
+            SecurityGroupEgress:   
+                - CidrIp: 0.0.0.0/0
+                  FromPort: 0
+                  ToPort: 65535
+                  IpProtocol: tcp
+
+    S3ReadOnlyEC2:
+        Type: AWS::IAM::Role
+        Properties:
+          AssumeRolePolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Principal:
+                  Service:
+                  - ec2.amazonaws.com
+                Action:
+                  - 'sts:AssumeRole' 
+          Policies:
+            - PolicyName: S3ReadOnlyAccess
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                  - s3:Get*
+                  - s3:List*
+                  Resource: "*"
+          Path: /
+
+    ProfileWithRolesForOurApp:
+        Type: AWS::IAM::InstanceProfile
+        Properties: 
+            Roles:
+              - !Ref S3ReadOnlyEC2
+
+    WebAppGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties:
+            VPCZoneIdentifier:
+                - Fn::ImportValue:
+                    !Sub "${EnvironmentName}-PRIV-NETS"
+            LaunchConfigurationName: 
+                Ref: WebAppLaunchConfig
+            MaxSize: '4'
+            MinSize: '2'
+            TargetGroupARNs:
+              - Ref: WebAppTargetGroup
+
+    WebAppLaunchConfig:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties: 
+            UserData:
+                Fn::Base64: !Sub |
+                  #!/bin/bash
+                  apt-get update -y
+                  apt-get install unzip awscli -y
+                  sudo apt-get update
+                  sudo apt install -y default-jdk
+                  wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+                  sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > \
+                  /etc/apt/sources.list.d/jenkins.list'
+                  sudo apt-get update
+                  sudo apt-get install jenkins     
+            ImageId: ami-0873b46c45c11058d
+            IamInstanceProfile: !Ref ProfileWithRolesForOurApp
+            SecurityGroups:
+                - Ref: WebServerSecGroup
+            InstanceType: t3.micro
+            BlockDeviceMappings:
+                - DeviceName: "/dev/sdk"
+                  Ebs:
+                    VolumeSize: 10
+
+    WebAppLB:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Subnets:
+        - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+        - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+        SecurityGroups:
+        - Ref: LBSecGroup
+        Tags:
+        - Key: Name
+          Value: Web App Load Balancer
+
+    Listener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: WebAppTargetGroup
+        LoadBalancerArn:
+          Ref: WebAppLB
+        Port: 80
+        Protocol: HTTP
+
+    ALBListenerRule:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+        - Type: forward
+          TargetGroupArn: !Ref 'WebAppTargetGroup'
+        Conditions:
+        - Field: path-pattern
+          Values: [/]
+        ListenerArn: !Ref 'Listener'
+        Priority: 1
+
+    WebAppTargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            HealthCheckIntervalSeconds: 35
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 10
+            HealthyThresholdCount: 2
+            Port: 80
+            Protocol: HTTP
+            UnhealthyThresholdCount: 5
+            VpcId:
+              Fn::ImportValue:
+                  Fn::Sub: "${EnvironmentName}-VPCID"
+
+Outputs:
+  PublicUrl:
+    Description: Public facing url for web app
+    Value: !Join  ['', ['http://', !GetAtt [WebAppLB, DNSName]]]
