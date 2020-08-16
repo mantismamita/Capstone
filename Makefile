@@ -1,19 +1,19 @@
-create-capstone-stack:
-	cd cloudformation && sh create.sh capstone infra.yml params.json
+create-capstoneInfra-stack:
+	sh cloudformation/create.sh capstoneInfra cloudformation/infra.yml cloudformation/params.json
 
-update-capstone-stack:
-	cd cloudformation && sh update.sh capstone infra.yml params.json
+update-capstoneInfra-stack:
+	sh cloudformation/update.sh capstoneInfra infra.yml params.json
 
-create-capstoneserver-stack:
-	cd cloudformation && sh create.sh capstoneserverstack servers.yml servers.json
+create-capstoneJenkins-stack:
+	sh cloudformation/create.sh capstoneJenkins cloudformation/jenkins.yml cloudformation/jenkinsParams.json
 
-update-capstoneserver-stack:
-	cd cloudformation && sh update.sh capstoneserverstack servers.yml servers.json && exit 0 && echo $?
+update-capstoneJenkins-stack:
+	sh cloudformation/update.sh capstoneJenkins cloudformation/jenkins.yml cloudformation/jenkinsparams.json
 
 update-stack:
-	cd cloudformation && sh update.sh capstone infra.yml params.json && sh update.sh capstoneserverstack servers.yml servers.json && exit | echo "stack updated"
+	sh cloudformation/update.sh capstone infra.yml params.json && sh update.sh capstoneserverstack servers.yml servers.json && exit | echo "stack updated"
 
 delete-stack: 
-	cd cloudformation && sh delete.sh capstone && sh delete.sh capstoneserverstack && exit | echo "stack deleted"
+	sh cloudformation/delete.sh capstone && sh delete.sh capstoneserverstack && exit | echo "stack deleted"
 
 docker-build: docker build --tag=capstone .

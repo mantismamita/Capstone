@@ -8,19 +8,15 @@
     "ParameterValue": "10.0.0.0/16"
   },
   {
-    "ParameterKey": "PublicSubnet1CIDR",
+    "ParameterKey": "Subnet1CIDR",
     "ParameterValue": "10.0.0.0/24"
   },
   {
-    "ParameterKey": "PublicSubnet2CIDR",
+    "ParameterKey": "Subnet2CIDR",
     "ParameterValue": "10.0.1.0/24"
   },
   {
-    "ParameterKey": "PrivateSubnet1CIDR",
+    "ParameterKey": "Subnet3CIDR",
     "ParameterValue": "10.0.2.0/24"
-  },
-  {
-    "ParameterKey": "PrivateSubnet2CIDR",
-    "ParameterValue": "10.0.3.0/24"
   }
 ]
