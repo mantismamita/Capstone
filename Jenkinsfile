@@ -8,18 +8,18 @@ pipeline {
          }
          stage('Lint HTML') {
               steps {
-                  sh 'tidy -q -e *.html'
+                  sh 'tidy -q -e **/*.html'
               }
          }
          stage('Build Docker Image') {
               steps {
-                  sh 'docker build -t capstone-devops .'
+                  sh 'docker build -t capstone .'
               }
          }
          stage('Push Docker Image') {
               steps {
                   withDockerRegistry([url: "", credentialsId: "docker-hub"]) {
-                      sh "docker tag capstone-devops mantismamita/capstone"
+                      sh "docker tag capstone mantismamita/capstone"
                       sh 'docker push mantismamita/capstone'
                   }
               }
