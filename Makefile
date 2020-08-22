@@ -10,6 +10,12 @@ create-capstoneJenkins-stack:
 update-capstoneJenkins-stack:
 	sh cloudformation/update.sh capstoneJenkins cloudformation/jenkins.yml cloudformation/jenkinsparams.json
 
+create-capstoneCluster-stack:
+	sh cloudformation/create.sh eksctl-capstonecluster-cluster cloudformation/eks.yml cloudformation/params.json
+
+update-capstoneCluster-stack:
+	sh cloudformation/update.sh eksctl-capstonecluster-cluster cloudformation/eks.yml cloudformation/params.json
+
 update-stack:
 	sh cloudformation/update.sh capstone infra.yml params.json && sh update.sh capstoneserverstack servers.yml servers.json && exit | echo "stack updated"
 
