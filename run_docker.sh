@@ -4,7 +4,7 @@
 
 # Step 1:
 # Build image and add a descriptive tag
-docker build --tag=mantismamita/capstone .
+docker build --tag=mantismamita/capstone:0.1.1 .
 
 # Step 2: 
 # List docker images

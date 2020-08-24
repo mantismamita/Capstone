@@ -41,6 +41,6 @@ spec:
                 - arm64
       containers:
       - name: nginx
-        image: mantismamita/capstone
+        image: mantismamita/capstone:0.1.1
         ports:
         - containerPort: 80
