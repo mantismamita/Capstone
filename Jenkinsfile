@@ -32,6 +32,7 @@ pipeline {
                     sh "aws eks --region us-west-2 update-kubeconfig --name capstonecluster"
                     sh "kubectl get svc"
                     sh "kubectl config use-context arn:aws:eks:us-west-2:618826675264:cluster/capstonecluster"
+                    sh "kubectl set image deployments/capstone-deployment nginx=mantismamita/capstone:latest"
                     sh "kubectl apply -f deployment.yml"
                     sh "kubectl get nodes"
                     sh "kubectl get deployment"
