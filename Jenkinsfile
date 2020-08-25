@@ -1,11 +1,6 @@
 pipeline {
     agent any
     stages {
-        stage('Build') {
-            steps {
-                sh 'echo Building...'
-            }
-        }
         stage('Lint HTML') {
             steps {
                 sh 'tidy -q -e **/*.html'
@@ -41,9 +36,9 @@ pipeline {
                 }
             }
         }
-        stage("Pruning") {
+        stage('Pruning') {
             steps{
-                echo 'Pruning...'
+                echo "Pruning..."
                 sh "docker system prune"
             }
         }
